@@ -29,8 +29,8 @@ export const CheckoutComponent: React.FC = () => {
 
   // Configuración del Pixel de TikTok - Using the correct Pixel ID from your script
   const { trackPurchase, trackInitiateCheckout, trackAddToCart, isInitialized } = useTikTokPixel({
-    pixelId: 'D4JHOSBC77UBCCH9DR1G', // Your actual TikTok Pixel ID
-    testMode: false // Set to false for production use
+    pixelId: 'D4JJ46BC77U7MI8IJV70', // Your actual TikTok Pixel ID from official script
+    testMode: true // Set to true for development, false for production
   });
 
   // Calcular total de la compra
