@@ -14,50 +14,54 @@ export const useTikTokPixel = (config: TikTokPixelConfig) => {
     if (typeof window === 'undefined' || scriptLoaded.current) return;
 
     try {
-      // Official TikTok Pixel Code - Pure JavaScript implementation
-      (function (w, d, t) {
+      // Official TikTok Pixel Code - ESLint compliant version
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (function (w: any, _d: Document, t: string) {
         w.TiktokAnalyticsObject = t;
-        var ttq = w[t] = w[t] || [];
+        const ttq = w[t] = w[t] || [];
         ttq.methods = [
           "page", "track", "identify", "instances", "debug", "on", "off",
           "once", "ready", "alias", "group", "enableCookie", "disableCookie",
           "holdConsent", "revokeConsent", "grantConsent"
         ];
         
-        ttq.setAndDefer = function (t, e) {
-          t[e] = function () {
-            t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ttq.setAndDefer = function (obj: any, method: string) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          obj[method] = function () {
+            obj.push([method].concat(Array.prototype.slice.call(arguments, 0)));
           };
         };
         
-        for (var i = 0; i < ttq.methods.length; i++) {
+        for (let i = 0; i < ttq.methods.length; i++) {
           ttq.setAndDefer(ttq, ttq.methods[i]);
         }
         
-        ttq.instance = function (t) {
-          for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++) {
-            ttq.setAndDefer(e, ttq.methods[n]);
+        ttq.instance = function (pixelId: string) {
+          const instance = ttq._i[pixelId] || [];
+          for (let n = 0; n < ttq.methods.length; n++) {
+            ttq.setAndDefer(instance, ttq.methods[n]);
           }
-          return e;
+          return instance;
         };
         
-        ttq.load = function (e, n) {
-          var r = "https://analytics.tiktok.com/i18n/pixel/events.js";
-          var o = n && n.partner;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ttq.load = function (pixelId: string, options?: any) {
+          const scriptUrl = "https://analytics.tiktok.com/i18n/pixel/events.js";
           ttq._i = ttq._i || {};
-          ttq._i[e] = [];
-          ttq._i[e]._u = r;
+          ttq._i[pixelId] = [];
+          ttq._i[pixelId]._u = scriptUrl;
           ttq._t = ttq._t || {};
-          ttq._t[e] = +new Date();
+          ttq._t[pixelId] = +new Date();
           ttq._o = ttq._o || {};
-          ttq._o[e] = n || {};
+          ttq._o[pixelId] = options || {};
           
-          var script = document.createElement("script");
+          const script = document.createElement("script");
           script.type = "text/javascript";
           script.async = true;
-          script.src = r + "?sdkid=" + e + "&lib=" + t;
+          script.src = scriptUrl + "?sdkid=" + pixelId + "&lib=" + t;
           
-          var firstScript = document.getElementsByTagName("script")[0];
+          const firstScript = document.getElementsByTagName("script")[0];
           if (firstScript && firstScript.parentNode) {
             firstScript.parentNode.insertBefore(script, firstScript);
           }
@@ -92,8 +96,11 @@ export const useTikTokPixel = (config: TikTokPixelConfig) => {
 
   // Function to track custom events
   const trackEvent = useCallback((eventName: string, eventData: TrackingEventData) => {
-    if (!isInitialized.current || !window.ttq) {
-      console.warn('⚠️ TikTok Pixel is not initialized');
+    // Better condition checking to avoid void expression errors
+    const isPixelReady = isInitialized.current && window.ttq && typeof window.ttq.track === 'function';
+    
+    if (!isPixelReady) {
+      console.warn('⚠️ TikTok Pixel is not initialized or ttq.track is not available');
       return;
     }
 
@@ -109,7 +116,8 @@ export const useTikTokPixel = (config: TikTokPixelConfig) => {
         contents: eventData.contents
       };
 
-      window.ttq.track(eventName, trackingData);
+      // Use non-null assertion since we've checked above
+      window.ttq!.track(eventName, trackingData);
       
       console.log(`📊 TikTok Pixel event sent: ${eventName}`, trackingData);
     } catch (error) {
@@ -144,13 +152,15 @@ export const useTikTokPixel = (config: TikTokPixelConfig) => {
 
   // Function to manually trigger page view (useful for SPA navigation)
   const trackPageView = useCallback(() => {
-    if (!isInitialized.current || !window.ttq) {
-      console.warn('⚠️ TikTok Pixel is not initialized');
+    const isPixelReady = isInitialized.current && window.ttq && typeof window.ttq.page === 'function';
+    
+    if (!isPixelReady) {
+      console.warn('⚠️ TikTok Pixel is not initialized or ttq.page is not available');
       return;
     }
 
     try {
-      window.ttq.page();
+      window.ttq!.page();
       console.log('📄 TikTok Pixel page view tracked');
     } catch (error) {
       console.error('❌ Error tracking page view:', error);
